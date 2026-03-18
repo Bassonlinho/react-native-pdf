@@ -175,6 +175,8 @@ public class PdfManager extends SimpleViewManager<PdfView> implements RNPDFPdfVi
     @Override
     public void onAfterUpdateTransaction(PdfView view) {
         super.onAfterUpdateTransaction(view);
-        view.drawPdf();
+        if (view.shouldDrawPdf()) {
+            view.drawPdf();
+        }
     }
 }

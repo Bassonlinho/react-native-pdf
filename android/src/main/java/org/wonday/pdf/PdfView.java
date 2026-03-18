@@ -76,6 +76,7 @@ public class PdfView extends PDFView implements OnPageChangeListener,OnLoadCompl
     private boolean enableAntialiasing = true;
     private boolean enableAnnotationRendering = true;
     private boolean enableDoubleTapZoom = true;
+    private boolean shouldDrawPdf = true;
     private boolean disposed = false;
     private boolean enablePaging = false;
     private boolean autoSpacing = false;
@@ -293,13 +294,6 @@ public class PdfView extends PDFView implements OnPageChangeListener,OnLoadCompl
     @Override
     protected void onDetachedFromWindow() {
         disposed = true;
-        try {
-            if (!this.isRecycled()) {
-                this.recycle();
-            }
-        } catch (Exception e) {
-            Log.w("PdfView", "Ignored recycle error on detach", e);
-        }
         super.onDetachedFromWindow();
     }
 
@@ -319,6 +313,7 @@ public class PdfView extends PDFView implements OnPageChangeListener,OnLoadCompl
         if (disposed || this.path == null) {
             return;
         }
+        shouldDrawPdf = false;
 
         if (this.path != null){
 
@@ -411,6 +406,7 @@ public class PdfView extends PDFView implements OnPageChangeListener,OnLoadCompl
         this.originalWidth = 0;
         this.lastPageWidth = 0;
         this.lastPageHeight = 0;
+        this.shouldDrawPdf = true;
     }
 
     // page start from 1
@@ -427,7 +423,10 @@ public class PdfView extends PDFView implements OnPageChangeListener,OnLoadCompl
     }
 
     public void setEnableRTL(boolean enableRTL) {
-        this.enableRTL = enableRTL;
+        if (this.enableRTL != enableRTL) {
+            this.enableRTL = enableRTL;
+            this.shouldDrawPdf = true;
+        }
     }
 
     public void setScale(float scale) {
@@ -443,27 +442,49 @@ public class PdfView extends PDFView implements OnPageChangeListener,OnLoadCompl
     }
 
     public void setHorizontal(boolean horizontal) {
-        this.horizontal = horizontal;
+        if (this.horizontal != horizontal) {
+            this.horizontal = horizontal;
+            this.shouldDrawPdf = true;
+        }
     }
 
     public void setScrollEnabled(boolean scrollEnabled) {
-        this.scrollEnabled = scrollEnabled;
+        if (this.scrollEnabled != scrollEnabled) {
+            this.scrollEnabled = scrollEnabled;
+            this.shouldDrawPdf = true;
+        }
     }
 
     public void setSpacing(int spacing) {
-        this.spacing = spacing;
+        if (this.spacing != spacing) {
+            this.spacing = spacing;
+            this.shouldDrawPdf = true;
+        }
     }
 
     public void setPassword(String password) {
-        this.password = password;
+        if (!this.password.equals(password)) {
+            this.password = password;
+            this.shouldDrawPdf = true;
+        }
     }
 
     public void setEnableAntialiasing(boolean enableAntialiasing) {
-        this.enableAntialiasing = enableAntialiasing;
+        if (this.enableAntialiasing != enableAntialiasing) {
+            this.enableAntialiasing = enableAntialiasing;
+            this.shouldDrawPdf = true;
+        }
     }
 
     public void setEnableAnnotationRendering(boolean enableAnnotationRendering) {
-        this.enableAnnotationRendering = enableAnnotationRendering;
+        if (this.enableAnnotationRendering != enableAnnotationRendering) {
+            this.enableAnnotationRendering = enableAnnotationRendering;
+            this.shouldDrawPdf = true;
+        }
+    }
+
+    public boolean shouldDrawPdf() {
+        return shouldDrawPdf;
     }
 
     public void setEnablePaging(boolean enablePaging) {
@@ -477,10 +498,11 @@ public class PdfView extends PDFView implements OnPageChangeListener,OnLoadCompl
             this.pageFling = false;
             this.pageSnap = false;
         }
+        this.shouldDrawPdf = true;
     }
 
     public void setFitPolicy(int fitPolicy) {
-        switch(fitPolicy){
+        switch (fitPolicy) {
             case 0:
                 this.fitPolicy = FitPolicy.WIDTH;
                 break;
@@ -489,16 +511,17 @@ public class PdfView extends PDFView implements OnPageChangeListener,OnLoadCompl
                 break;
             case 2:
             default:
-            {
                 this.fitPolicy = FitPolicy.BOTH;
                 break;
-            }
         }
-
+        this.shouldDrawPdf = true;
     }
 
     public void setSinglePage(boolean singlePage) {
-        this.singlePage = singlePage;
+        if (this.singlePage != singlePage) {
+            this.singlePage = singlePage;
+            this.shouldDrawPdf = true;
+        }
     }
 
     /**
