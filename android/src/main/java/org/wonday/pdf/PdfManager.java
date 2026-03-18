@@ -8,7 +8,7 @@
 
 package org.wonday.pdf;
 
-import android.content.Context;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -28,8 +28,6 @@ import com.facebook.react.viewmanagers.RNPDFPdfViewManagerInterface;
 @ReactModule(name = PdfManager.REACT_CLASS)
 public class PdfManager extends SimpleViewManager<PdfView> implements RNPDFPdfViewManagerInterface<PdfView> {
     public static final String REACT_CLASS = "RNPDFPdfView";
-    private Context context;
-    private PdfView pdfView;
     private final ViewManagerDelegate<PdfView> mDelegate;
 
     @Nullable
@@ -42,8 +40,7 @@ public class PdfManager extends SimpleViewManager<PdfView> implements RNPDFPdfVi
         mDelegate = new RNPDFPdfViewManagerDelegate<>(this);
     }
 
-    public PdfManager(ReactApplicationContext reactContext){
-        this.context = reactContext;
+    public PdfManager(ReactApplicationContext reactContext) {
         mDelegate = new RNPDFPdfViewManagerDelegate<>(this);
     }
 
@@ -54,44 +51,50 @@ public class PdfManager extends SimpleViewManager<PdfView> implements RNPDFPdfVi
 
     @Override
     public PdfView createViewInstance(ThemedReactContext context) {
-        this.pdfView = new PdfView(context,null);
-        return pdfView;
+        return new PdfView(context, null);
     }
 
     @Override
-    public void onDropViewInstance(PdfView pdfView) {
-        pdfView = null;
+    public void onDropViewInstance(PdfView view) {
+        try {
+            if (!view.isRecycled()) {
+                view.recycle();
+            }
+        } catch (Exception e) {
+            Log.w("PdfManager", "Ignored recycle error on drop", e);
+        }
+
+        super.onDropViewInstance(view);
     }
 
     @ReactProp(name = "path")
-    public void setPath(PdfView pdfView, String path) {
-        pdfView.setPath(path);
+    public void setPath(PdfView view, String path) {
+        view.setPath(path);
     }
 
-    // page start from 1
     @ReactProp(name = "page")
-    public void setPage(PdfView pdfView, int page) {
-        pdfView.setPage(page);
+    public void setPage(PdfView view, int page) {
+        view.setPage(page);
     }
 
     @ReactProp(name = "scale")
-    public void setScale(PdfView pdfView, float scale) {
-        pdfView.setScale(scale);
+    public void setScale(PdfView view, float scale) {
+        view.setScale(scale);
     }
 
     @ReactProp(name = "minScale")
-    public void setMinScale(PdfView pdfView, float minScale) {
-        pdfView.setMinScale(minScale);
+    public void setMinScale(PdfView view, float minScale) {
+        view.setMinScale(minScale);
     }
 
     @ReactProp(name = "maxScale")
-    public void setMaxScale(PdfView pdfView, float maxScale) {
-        pdfView.setMaxScale(maxScale);
+    public void setMaxScale(PdfView view, float maxScale) {
+        view.setMaxScale(maxScale);
     }
 
     @ReactProp(name = "horizontal")
-    public void setHorizontal(PdfView pdfView, boolean horizontal) {
-        pdfView.setHorizontal(horizontal);
+    public void setHorizontal(PdfView view, boolean horizontal) {
+        view.setHorizontal(horizontal);
     }
 
     @Override
@@ -99,66 +102,64 @@ public class PdfManager extends SimpleViewManager<PdfView> implements RNPDFPdfVi
         // NOOP on Android
     }
 
-	@Override
+    @Override
     public void setShowsVerticalScrollIndicator(PdfView view, boolean value) {
         // NOOP on Android
     }
 
     @ReactProp(name = "enableRTL")
     public void setEnableRTL(PdfView view, boolean enableRTL) {
-        pdfView.setEnableRTL(enableRTL);
+        view.setEnableRTL(enableRTL);
     }
 
     @ReactProp(name = "scrollEnabled")
     public void setScrollEnabled(PdfView view, boolean scrollEnabled) {
-        pdfView.setScrollEnabled(scrollEnabled);
+        view.setScrollEnabled(scrollEnabled);
     }
 
     @ReactProp(name = "spacing")
-    public void setSpacing(PdfView pdfView, int spacing) {
-        pdfView.setSpacing(spacing);
+    public void setSpacing(PdfView view, int spacing) {
+        view.setSpacing(spacing);
     }
 
     @ReactProp(name = "password")
-    public void setPassword(PdfView pdfView, String password) {
-        pdfView.setPassword(password);
+    public void setPassword(PdfView view, String password) {
+        view.setPassword(password);
     }
 
     @ReactProp(name = "enableAntialiasing")
-    public void setEnableAntialiasing(PdfView pdfView, boolean enableAntialiasing) {
-        pdfView.setEnableAntialiasing(enableAntialiasing);
+    public void setEnableAntialiasing(PdfView view, boolean enableAntialiasing) {
+        view.setEnableAntialiasing(enableAntialiasing);
     }
 
     @ReactProp(name = "enableAnnotationRendering")
-    public void setEnableAnnotationRendering(PdfView pdfView, boolean enableAnnotationRendering) {
-        pdfView.setEnableAnnotationRendering(enableAnnotationRendering);
+    public void setEnableAnnotationRendering(PdfView view, boolean enableAnnotationRendering) {
+        view.setEnableAnnotationRendering(enableAnnotationRendering);
     }
 
     @ReactProp(name = "enableDoubleTapZoom")
-    public void setEnableDoubleTapZoom(PdfView pdfView, boolean enableDoubleTap) {
-        pdfView.setEnableDoubleTapZoom(enableDoubleTap);
+    public void setEnableDoubleTapZoom(PdfView view, boolean enableDoubleTap) {
+        view.setEnableDoubleTapZoom(enableDoubleTap);
     }
 
     @ReactProp(name = "enablePaging")
-    public void setEnablePaging(PdfView pdfView, boolean enablePaging) {
-        pdfView.setEnablePaging(enablePaging);
+    public void setEnablePaging(PdfView view, boolean enablePaging) {
+        view.setEnablePaging(enablePaging);
     }
 
     @ReactProp(name = "fitPolicy")
-    public void setFitPolicy(PdfView pdfView, int fitPolicy) {
-        pdfView.setFitPolicy(fitPolicy);
+    public void setFitPolicy(PdfView view, int fitPolicy) {
+        view.setFitPolicy(fitPolicy);
     }
 
     @ReactProp(name = "singlePage")
-    public void setSinglePage(PdfView pdfView, boolean singlePage) {
-        pdfView.setSinglePage(singlePage);
+    public void setSinglePage(PdfView view, boolean singlePage) {
+        view.setSinglePage(singlePage);
     }
 
-    // It seems funny, but this method is called through delegate on Paper, but on Fabric we need to
-    // use `receiveCommand` method and call this one there
     @Override
     public void setNativePage(PdfView view, int page) {
-        pdfView.setPage(page);
+        view.setPage(page);
     }
 
     @Override
@@ -172,9 +173,8 @@ public class PdfManager extends SimpleViewManager<PdfView> implements RNPDFPdfVi
     }
 
     @Override
-    public void onAfterUpdateTransaction(PdfView pdfView) {
-        super.onAfterUpdateTransaction(pdfView);
-        pdfView.drawPdf();
+    public void onAfterUpdateTransaction(PdfView view) {
+        super.onAfterUpdateTransaction(view);
+        view.drawPdf();
     }
-
 }

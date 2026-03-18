@@ -76,7 +76,7 @@ public class PdfView extends PDFView implements OnPageChangeListener,OnLoadCompl
     private boolean enableAntialiasing = true;
     private boolean enableAnnotationRendering = true;
     private boolean enableDoubleTapZoom = true;
-
+    private boolean disposed = false;
     private boolean enablePaging = false;
     private boolean autoSpacing = false;
     private boolean pageFling = false;
@@ -150,16 +150,29 @@ public class PdfView extends PDFView implements OnPageChangeListener,OnLoadCompl
 
     @Override
     public void loadComplete(int numberOfPages) {
-        SizeF pageSize = getPageSize(0);
-        float width = pageSize.getWidth();
-        float height = pageSize.getHeight();
+        float width = 0;
+        float height = 0;
+
+        try {
+            if (numberOfPages > 0) {
+                SizeF pageSize = getPageSize(0);
+                if (pageSize != null) {
+                    width = pageSize.getWidth();
+                    height = pageSize.getHeight();
+                }
+            }
+        } catch (Exception e) {
+            Log.w("PdfView", "Failed to read first page size", e);
+        }
 
         this.zoomTo(this.scale);
         WritableMap event = Arguments.createMap();
 
-        //create a new json Object for the TableOfContents
         Gson gson = new Gson();
-        event.putString("message", "loadComplete|"+numberOfPages+"|"+width+"|"+height+"|"+gson.toJson(this.getTableOfContents()));
+        event.putString(
+            "message",
+            "loadComplete|" + numberOfPages + "|" + width + "|" + height + "|" + gson.toJson(this.getTableOfContents())
+        );
 
         ThemedReactContext context = (ThemedReactContext) getContext();
         EventDispatcher dispatcher = UIManagerHelper.getEventDispatcherForReactTag(context, getId());
@@ -170,24 +183,17 @@ public class PdfView extends PDFView implements OnPageChangeListener,OnLoadCompl
         if (dispatcher != null) {
             dispatcher.dispatchEvent(tce);
         }
-        //        ReactContext reactContext = (ReactContext)this.getContext();
-//        reactContext.getJSModule(RCTEventEmitter.class).receiveEvent(
-//            this.getId(),
-//            "topChange",
-//            event
-//         );
-
-        //Log.e("ReactNative", gson.toJson(this.getTableOfContents()));
-
     }
 
     @Override
     public void onError(Throwable t){
         WritableMap event = Arguments.createMap();
-        if (t.getMessage().contains("Password required or incorrect password")) {
+        String message = t != null ? t.getMessage() : null;
+
+        if (message != null && message.contains("Password required or incorrect password")) {
             event.putString("message", "error|Password required or incorrect password.");
         } else {
-            event.putString("message", "error|"+t.getMessage());
+            event.putString("message", "error|" + String.valueOf(message));
         }
 
         ThemedReactContext context = (ThemedReactContext) getContext();
@@ -199,15 +205,8 @@ public class PdfView extends PDFView implements OnPageChangeListener,OnLoadCompl
         if (dispatcher != null) {
             dispatcher.dispatchEvent(tce);
         }
-
-//        ReactContext reactContext = (ReactContext)this.getContext();
-//        reactContext.getJSModule(RCTEventEmitter.class).receiveEvent(
-//            this.getId(),
-//            "topChange",
-//            event
-//         );
     }
-
+    
     @Override
     public void onPageScrolled(int page, float positionOffset){
 
@@ -285,8 +284,23 @@ public class PdfView extends PDFView implements OnPageChangeListener,OnLoadCompl
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        if (this.isRecycled())
+        disposed = false;
+        if (this.isRecycled() && this.path != null) {
             this.drawPdf();
+        }
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        disposed = true;
+        try {
+            if (!this.isRecycled()) {
+                this.recycle();
+            }
+        } catch (Exception e) {
+            Log.w("PdfView", "Ignored recycle error on detach", e);
+        }
+        super.onDetachedFromWindow();
     }
 
     private int getPdfPageCount(File pdfFile) throws IOException {
@@ -301,6 +315,10 @@ public class PdfView extends PDFView implements OnPageChangeListener,OnLoadCompl
 
     public void drawPdf() {
         showLog(format("drawPdf path:%s %s", this.path, this.page));
+        
+        if (disposed || this.path == null) {
+            return;
+        }
 
         if (this.path != null){
 
@@ -379,13 +397,33 @@ public class PdfView extends PDFView implements OnPageChangeListener,OnLoadCompl
     }
 
     public void setPath(String path) {
+        if (path != null && path.equals(this.path)) {
+            return;
+        }
+        try {
+            if (!this.isRecycled()) {
+                this.recycle();
+            }
+        } catch (Exception e) {
+            Log.w("PdfView", "Ignored recycle error while switching PDF source", e);
+        }
         this.path = path;
+        this.originalWidth = 0;
+        this.lastPageWidth = 0;
+        this.lastPageHeight = 0;
     }
 
     // page start from 1
     public void setPage(int page) {
         this.page = Math.max(page, 1);
-        this.handlePage(this.page - 1);
+        if (disposed || this.path == null || this.isRecycled()) {
+            return;
+        }
+        try {
+            this.handlePage(this.page - 1);
+        } catch (Exception e) {
+            Log.w("PdfView", "Ignored setPage on invalid PDF state", e);
+        }
     }
 
     public void setEnableRTL(boolean enableRTL) {
