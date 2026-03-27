@@ -422,6 +422,13 @@ public class PdfView extends PDFView implements OnPageChangeListener,OnLoadCompl
         }
     }
 
+    public void setHorizontal(boolean horizontal) {
+        if (this.horizontal != horizontal) {
+            this.horizontal = horizontal;
+            this.needsRedraw = true;
+        }
+    }
+
     public void setScrollEnabled(boolean scrollEnabled) {
         if (this.scrollEnabled != scrollEnabled) {
             this.scrollEnabled = scrollEnabled;
