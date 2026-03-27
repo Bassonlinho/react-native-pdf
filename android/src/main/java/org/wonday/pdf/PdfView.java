@@ -76,8 +76,8 @@ public class PdfView extends PDFView implements OnPageChangeListener,OnLoadCompl
     private boolean enableAntialiasing = true;
     private boolean enableAnnotationRendering = true;
     private boolean enableDoubleTapZoom = true;
-    private boolean shouldDrawPdf = true;
-    private boolean disposed = false;
+    private boolean needsRedraw = true;
+    private String lastLoadedPath = null;
     private boolean enablePaging = false;
     private boolean autoSpacing = false;
     private boolean pageFling = false;
@@ -151,29 +151,16 @@ public class PdfView extends PDFView implements OnPageChangeListener,OnLoadCompl
 
     @Override
     public void loadComplete(int numberOfPages) {
-        float width = 0;
-        float height = 0;
-
-        try {
-            if (numberOfPages > 0) {
-                SizeF pageSize = getPageSize(0);
-                if (pageSize != null) {
-                    width = pageSize.getWidth();
-                    height = pageSize.getHeight();
-                }
-            }
-        } catch (Exception e) {
-            Log.w("PdfView", "Failed to read first page size", e);
-        }
+        SizeF pageSize = getPageSize(0);
+        float width = pageSize.getWidth();
+        float height = pageSize.getHeight();
 
         this.zoomTo(this.scale);
         WritableMap event = Arguments.createMap();
 
+        //create a new json Object for the TableOfContents
         Gson gson = new Gson();
-        event.putString(
-            "message",
-            "loadComplete|" + numberOfPages + "|" + width + "|" + height + "|" + gson.toJson(this.getTableOfContents())
-        );
+        event.putString("message", "loadComplete|"+numberOfPages+"|"+width+"|"+height+"|"+gson.toJson(this.getTableOfContents()));
 
         ThemedReactContext context = (ThemedReactContext) getContext();
         EventDispatcher dispatcher = UIManagerHelper.getEventDispatcherForReactTag(context, getId());
@@ -184,17 +171,24 @@ public class PdfView extends PDFView implements OnPageChangeListener,OnLoadCompl
         if (dispatcher != null) {
             dispatcher.dispatchEvent(tce);
         }
+        //        ReactContext reactContext = (ReactContext)this.getContext();
+//        reactContext.getJSModule(RCTEventEmitter.class).receiveEvent(
+//            this.getId(),
+//            "topChange",
+//            event
+//         );
+
+        //Log.e("ReactNative", gson.toJson(this.getTableOfContents()));
+
     }
 
     @Override
     public void onError(Throwable t){
         WritableMap event = Arguments.createMap();
-        String message = t != null ? t.getMessage() : null;
-
-        if (message != null && message.contains("Password required or incorrect password")) {
+        if (t.getMessage().contains("Password required or incorrect password")) {
             event.putString("message", "error|Password required or incorrect password.");
         } else {
-            event.putString("message", "error|" + String.valueOf(message));
+            event.putString("message", "error|"+t.getMessage());
         }
 
         ThemedReactContext context = (ThemedReactContext) getContext();
@@ -206,8 +200,15 @@ public class PdfView extends PDFView implements OnPageChangeListener,OnLoadCompl
         if (dispatcher != null) {
             dispatcher.dispatchEvent(tce);
         }
+
+//        ReactContext reactContext = (ReactContext)this.getContext();
+//        reactContext.getJSModule(RCTEventEmitter.class).receiveEvent(
+//            this.getId(),
+//            "topChange",
+//            event
+//         );
     }
-    
+
     @Override
     public void onPageScrolled(int page, float positionOffset){
 
@@ -285,16 +286,8 @@ public class PdfView extends PDFView implements OnPageChangeListener,OnLoadCompl
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        disposed = false;
-        if (this.isRecycled() && this.path != null) {
+        if (this.isRecycled())
             this.drawPdf();
-        }
-    }
-
-    @Override
-    protected void onDetachedFromWindow() {
-        disposed = true;
-        super.onDetachedFromWindow();
     }
 
     private int getPdfPageCount(File pdfFile) throws IOException {
@@ -307,13 +300,19 @@ public class PdfView extends PDFView implements OnPageChangeListener,OnLoadCompl
         return pageCount;
     }
 
-    public void drawPdf() {
-        showLog(format("drawPdf path:%s %s", this.path, this.page));
-        
-        if (disposed || this.path == null) {
+    public void maybeDrawPdf() {
+        if (!this.needsRedraw || this.path == null) {
             return;
         }
-        shouldDrawPdf = false;
+
+        showLog(format("maybeDrawPdf -> drawPdf path:%s %s", this.path, this.page));
+        this.needsRedraw = false;
+        drawPdf();
+    }
+
+
+    public void drawPdf() {
+        showLog(format("drawPdf path:%s %s", this.path, this.page));
 
         if (this.path != null){
 
@@ -391,42 +390,17 @@ public class PdfView extends PDFView implements OnPageChangeListener,OnLoadCompl
         this.enableDoubleTapZoom = enableDoubleTapZoom;
     }
 
-    public void setPath(String path) {
-        if (path != null && path.equals(this.path)) {
-            return;
-        }
-        try {
-            if (!this.isRecycled()) {
-                this.recycle();
-            }
-        } catch (Exception e) {
-            Log.w("PdfView", "Ignored recycle error while switching PDF source", e);
-        }
-        this.path = path;
-        this.originalWidth = 0;
-        this.lastPageWidth = 0;
-        this.lastPageHeight = 0;
-        this.shouldDrawPdf = true;
-    }
-
     // page start from 1
     public void setPage(int page) {
-        this.page = Math.max(page, 1);
-        if (disposed || this.path == null || this.isRecycled()) {
-            return;
-        }
-        try {
+        int nextPage = Math.max(page, 1);
+        this.page = nextPage;
+
+        if (!this.isRecycled()) {
             this.handlePage(this.page - 1);
-        } catch (Exception e) {
-            Log.w("PdfView", "Ignored setPage on invalid PDF state", e);
         }
     }
-
     public void setEnableRTL(boolean enableRTL) {
-        if (this.enableRTL != enableRTL) {
-            this.enableRTL = enableRTL;
-            this.shouldDrawPdf = true;
-        }
+        this.enableRTL = enableRTL;
     }
 
     public void setScale(float scale) {
@@ -441,86 +415,89 @@ public class PdfView extends PDFView implements OnPageChangeListener,OnLoadCompl
         this.maxScale = maxScale;
     }
 
-    public void setHorizontal(boolean horizontal) {
-        if (this.horizontal != horizontal) {
-            this.horizontal = horizontal;
-            this.shouldDrawPdf = true;
+    public void setPath(String path) {
+        if ((this.path == null && path != null) || (this.path != null && !this.path.equals(path))) {
+            this.path = path;
+            this.needsRedraw = true;
         }
     }
 
     public void setScrollEnabled(boolean scrollEnabled) {
         if (this.scrollEnabled != scrollEnabled) {
             this.scrollEnabled = scrollEnabled;
-            this.shouldDrawPdf = true;
+            this.needsRedraw = true;
         }
     }
 
     public void setSpacing(int spacing) {
         if (this.spacing != spacing) {
             this.spacing = spacing;
-            this.shouldDrawPdf = true;
+            this.needsRedraw = true;
         }
     }
 
     public void setPassword(String password) {
-        if (!this.password.equals(password)) {
+        if ((this.password == null && password != null) || (this.password != null && !this.password.equals(password))) {
             this.password = password;
-            this.shouldDrawPdf = true;
+            this.needsRedraw = true;
         }
     }
 
     public void setEnableAntialiasing(boolean enableAntialiasing) {
         if (this.enableAntialiasing != enableAntialiasing) {
             this.enableAntialiasing = enableAntialiasing;
-            this.shouldDrawPdf = true;
+            this.needsRedraw = true;
         }
     }
 
     public void setEnableAnnotationRendering(boolean enableAnnotationRendering) {
         if (this.enableAnnotationRendering != enableAnnotationRendering) {
             this.enableAnnotationRendering = enableAnnotationRendering;
-            this.shouldDrawPdf = true;
+            this.needsRedraw = true;
         }
-    }
-
-    public boolean shouldDrawPdf() {
-        return shouldDrawPdf;
     }
 
     public void setEnablePaging(boolean enablePaging) {
-        this.enablePaging = enablePaging;
-        if (this.enablePaging) {
-            this.autoSpacing = true;
-            this.pageFling = true;
-            this.pageSnap = true;
-        } else {
-            this.autoSpacing = false;
-            this.pageFling = false;
-            this.pageSnap = false;
+        if (this.enablePaging != enablePaging) {
+            this.enablePaging = enablePaging;
+            if (this.enablePaging) {
+                this.autoSpacing = true;
+                this.pageFling = true;
+                this.pageSnap = true;
+            } else {
+                this.autoSpacing = false;
+                this.pageFling = false;
+                this.pageSnap = false;
+            }
+            this.needsRedraw = true;
         }
-        this.shouldDrawPdf = true;
     }
 
     public void setFitPolicy(int fitPolicy) {
+        FitPolicy nextPolicy;
         switch (fitPolicy) {
             case 0:
-                this.fitPolicy = FitPolicy.WIDTH;
+                nextPolicy = FitPolicy.WIDTH;
                 break;
             case 1:
-                this.fitPolicy = FitPolicy.HEIGHT;
+                nextPolicy = FitPolicy.HEIGHT;
                 break;
             case 2:
             default:
-                this.fitPolicy = FitPolicy.BOTH;
+                nextPolicy = FitPolicy.BOTH;
                 break;
         }
-        this.shouldDrawPdf = true;
+
+        if (this.fitPolicy != nextPolicy) {
+            this.fitPolicy = nextPolicy;
+            this.needsRedraw = true;
+        }
     }
 
     public void setSinglePage(boolean singlePage) {
         if (this.singlePage != singlePage) {
             this.singlePage = singlePage;
-            this.shouldDrawPdf = true;
+            this.needsRedraw = true;
         }
     }
 
