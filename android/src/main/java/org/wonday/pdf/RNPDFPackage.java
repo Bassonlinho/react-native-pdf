@@ -22,7 +22,9 @@ public class RNPDFPackage implements ReactPackage {
 
     @Override
     public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {
-        return Collections.emptyList();
+        List<NativeModule> modules = new ArrayList<>();
+        modules.add(new PdfModule(reactContext));
+        return modules;
     }
 
     // Deprecated as of RN 0.47.0
@@ -34,6 +36,7 @@ public class RNPDFPackage implements ReactPackage {
     public List<ViewManager> createViewManagers(ReactApplicationContext reactContext) {
         List<ViewManager> modules = new ArrayList<>();
         modules.add(new PdfManager(reactContext));
+        modules.add(new PdfPageViewManager());
         return modules;
     }
 }
