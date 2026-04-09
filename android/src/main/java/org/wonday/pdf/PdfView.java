@@ -346,7 +346,6 @@ public class PdfView extends PDFView implements OnPageChangeListener,OnLoadCompl
                 .onError(this)
                 .onDraw(this)
                 .onPageScroll(this)
-                .useBestQuality(true)
                 .spacing(this.spacing)
                 .password(this.password)
                 .enableAntialiasing(this.enableAntialiasing)
