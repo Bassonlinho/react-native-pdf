@@ -57,7 +57,6 @@ export default class Pdf extends Component {
         fitPolicy: PropTypes.number,
         trustAllCerts: PropTypes.bool,
         singlePage: PropTypes.bool,
-        useAndroidPdfRenderer: PropTypes.bool,
         onLoadComplete: PropTypes.func,
         onPageChanged: PropTypes.func,
         onError: PropTypes.func,
@@ -96,7 +95,6 @@ export default class Pdf extends Component {
         trustAllCerts: true,
         usePDFKit: true,
         singlePage: false,
-        useAndroidPdfRenderer: false,
         onLoadProgress: (percent) => {
         },
         onLoadComplete: (numberOfPages, path) => {
@@ -433,57 +431,43 @@ export default class Pdf extends Component {
 
     render() {
         if (Platform.OS === "android" || Platform.OS === "ios" || Platform.OS === "windows") {
-                const {useAndroidPdfRenderer, ...restProps} = this.props;
-                const shouldUseAndroidPdfRenderer = Platform.OS === "android" && useAndroidPdfRenderer;
                 return (
-                    <View style={[restProps.style,{overflow: 'hidden'}]}>
+                    <View style={[this.props.style,{overflow: 'hidden'}]}>
                         {!this.state.isDownloaded?
                             (<View
-                                style={[styles.progressContainer, restProps.progressContainerStyle]}
+                                style={[styles.progressContainer, this.props.progressContainerStyle]}
                             >
-                                {restProps.renderActivityIndicator
-                                    ? restProps.renderActivityIndicator(this.state.progress)
+                                {this.props.renderActivityIndicator
+                                    ? this.props.renderActivityIndicator(this.state.progress)
                                     : <Text>{`${(this.state.progress * 100).toFixed(2)}%`}</Text>}
                             </View>):(
-                                shouldUseAndroidPdfRenderer ? (
-                                        <PdfView
-                                            {...restProps}
-                                            style={[{backgroundColor: '#EEE',overflow: 'hidden'}, restProps.style]}
-                                            path={this.state.path}
-                                            onLoadComplete={restProps.onLoadComplete}
-                                            onPageChanged={restProps.onPageChanged}
-                                            onError={this._onError}
-                                            onPageSingleTap={restProps.onPageSingleTap}
-                                            onScaleChanged={restProps.onScaleChanged}
-                                            onPressLink={restProps.onPressLink}
-                                        />
-                                    ) : Platform.OS === "android" || Platform.OS === "windows"?(
+                                Platform.OS === "android" || Platform.OS === "windows"?(
                                         <PdfCustom
                                             ref={component => (this._root = component)}
-                                            {...restProps}
-                                            style={[{flex:1,backgroundColor: '#EEE'}, restProps.style]}
+                                            {...this.props}
+                                            style={[{flex:1,backgroundColor: '#EEE'}, this.props.style]}
                                             path={this.state.path}
                                             onChange={this._onChange}
                                         />
                                     ):(
-                                        restProps.usePDFKit ?(
+                                        this.props.usePDFKit ?(
                                                 <PdfCustom
                                                     ref={component => (this._root = component)}
-                                                    {...restProps}
-                                                    style={[{backgroundColor: '#EEE',overflow: 'hidden'}, restProps.style]}
+                                                    {...this.props}
+                                                    style={[{backgroundColor: '#EEE',overflow: 'hidden'}, this.props.style]}
                                                     path={this.state.path}
                                                     onChange={this._onChange}
                                                 />
                                             ):(<PdfView
-                                                {...restProps}
-                                                style={[{backgroundColor: '#EEE',overflow: 'hidden'}, restProps.style]}
+                                                {...this.props}
+                                                style={[{backgroundColor: '#EEE',overflow: 'hidden'}, this.props.style]}
                                                 path={this.state.path}
-                                                onLoadComplete={restProps.onLoadComplete}
-                                                onPageChanged={restProps.onPageChanged}
+                                                onLoadComplete={this.props.onLoadComplete}
+                                                onPageChanged={this.props.onPageChanged}
                                                 onError={this._onError}
-                                                onPageSingleTap={restProps.onPageSingleTap}
-                                                onScaleChanged={restProps.onScaleChanged}
-                                                onPressLink={restProps.onPressLink}
+                                                onPageSingleTap={this.props.onPageSingleTap}
+                                                onScaleChanged={this.props.onScaleChanged}
+                                                onPressLink={this.props.onPressLink}
                                             />)
                                     )
                                 )}
