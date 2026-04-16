@@ -53,6 +53,12 @@ public class RNPDFPdfViewManagerDelegate<T extends View, U extends BaseViewManag
       case "enablePaging":
         mViewManager.setEnablePaging(view, value == null ? false : (boolean) value);
         break;
+      case "useBestQuality":
+        mViewManager.setUseBestQuality(view, value == null ? false : (boolean) value);
+        break;
+      case "enableRenderDuringScale":
+        mViewManager.setEnableRenderDuringScale(view, value == null ? false : (boolean) value);
+        break;
       case "enableRTL":
         mViewManager.setEnableRTL(view, value == null ? false : (boolean) value);
         break;

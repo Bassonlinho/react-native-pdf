@@ -144,6 +144,16 @@ public class PdfManager extends SimpleViewManager<PdfView> implements RNPDFPdfVi
         pdfView.setEnablePaging(enablePaging);
     }
 
+    @ReactProp(name = "useBestQuality")
+    public void setUseBestQuality(PdfView pdfView, boolean useBestQuality) {
+        pdfView.setUseBestQuality(useBestQuality);
+    }
+
+    @ReactProp(name = "enableRenderDuringScale")
+    public void setEnableRenderDuringScale(PdfView pdfView, boolean enableRenderDuringScale) {
+        pdfView.setEnableRenderDuringScale(enableRenderDuringScale);
+    }
+
     @ReactProp(name = "fitPolicy")
     public void setFitPolicy(PdfView pdfView, int fitPolicy) {
         pdfView.setFitPolicy(fitPolicy);

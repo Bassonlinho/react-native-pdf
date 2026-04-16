@@ -82,6 +82,8 @@ public class PdfView extends PDFView implements OnPageChangeListener,OnLoadCompl
     private boolean autoSpacing = false;
     private boolean pageFling = false;
     private boolean pageSnap = false;
+    private boolean useBestQuality = false;
+    private boolean enableRenderDuringScale = false;
     private FitPolicy fitPolicy = FitPolicy.WIDTH;
     private boolean singlePage = false;
     private boolean scrollEnabled = true;
@@ -320,6 +322,8 @@ public class PdfView extends PDFView implements OnPageChangeListener,OnLoadCompl
             this.setMinZoom(this.minScale);
             this.setMaxZoom(this.maxScale);
             this.setMidZoom((this.maxScale+this.minScale)/2);
+            this.useBestQuality(this.useBestQuality);
+            this.enableRenderDuringScale(this.enableRenderDuringScale);
             Constants.Pinch.MINIMUM_ZOOM = this.minScale;
             Constants.Pinch.MAXIMUM_ZOOM = this.maxScale;
 
@@ -476,6 +480,22 @@ public class PdfView extends PDFView implements OnPageChangeListener,OnLoadCompl
                 this.pageFling = false;
                 this.pageSnap = false;
             }
+            this.needsRedraw = true;
+        }
+    }
+
+    public void setUseBestQuality(boolean useBestQuality) {
+        if (this.useBestQuality != useBestQuality) {
+            this.useBestQuality = useBestQuality;
+            this.useBestQuality(useBestQuality);
+            this.needsRedraw = true;
+        }
+    }
+
+    public void setEnableRenderDuringScale(boolean enableRenderDuringScale) {
+        if (this.enableRenderDuringScale != enableRenderDuringScale) {
+            this.enableRenderDuringScale = enableRenderDuringScale;
+            this.enableRenderDuringScale(enableRenderDuringScale);
             this.needsRedraw = true;
         }
     }
