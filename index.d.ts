@@ -44,8 +44,6 @@ export interface PdfProps {
     renderActivityIndicator?: (progress: number) => React.ReactElement,
     enableAntialiasing?: boolean,
     enablePaging?: boolean,
-    useBestQuality?: boolean,
-    enableRenderDuringScale?: boolean,
     enableRTL?: boolean,
     enableAnnotationRendering?: boolean,
     enableDoubleTapZoom?: boolean;

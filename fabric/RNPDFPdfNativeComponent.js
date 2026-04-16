@@ -20,8 +20,6 @@
    maxScale: ?Float,
    horizontal: ?boolean,
    enablePaging: ?boolean,
-   useBestQuality: ?boolean,
-   enableRenderDuringScale: ?boolean,
    enableRTL: ?boolean,
    enableAnnotationRendering: ?boolean,
    showsHorizontalScrollIndicator: ?boolean,
