@@ -16,6 +16,7 @@ import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.ParcelFileDescriptor;
+import android.os.SystemClock;
 import android.util.SizeF;
 import android.view.View;
 import android.view.ViewGroup;
@@ -90,6 +91,8 @@ public class PdfView extends PDFView implements OnPageChangeListener,OnLoadCompl
     private float originalWidth = 0;
     private float lastPageWidth = 0;
     private float lastPageHeight = 0;
+    private long lastZoomRefreshAtMs = 0;
+    private float lastZoomRefreshScale = 1f;
 
     // used to store the parameters for `super.onSizeChanged`
     private int oldW = 0;
@@ -279,6 +282,22 @@ public class PdfView extends PDFView implements OnPageChangeListener,OnLoadCompl
 //             );
         }
 
+        if (originalWidth > 0 && this.isZooming()) {
+            float currentScale = pageWidth / originalWidth;
+            long now = SystemClock.uptimeMillis();
+            boolean scaleAdvanced = Math.abs(currentScale - lastZoomRefreshScale) >= 0.06f;
+            boolean refreshAllowed = now - lastZoomRefreshAtMs >= 75;
+
+            if (scaleAdvanced && refreshAllowed) {
+                lastZoomRefreshAtMs = now;
+                lastZoomRefreshScale = currentScale;
+                this.post(this::loadPages);
+            }
+        } else if (!this.isZooming()) {
+            lastZoomRefreshScale = 1f;
+            lastZoomRefreshAtMs = 0;
+        }
+
         lastPageWidth = pageWidth;
         lastPageHeight = pageHeight;
     }
@@ -320,6 +339,13 @@ public class PdfView extends PDFView implements OnPageChangeListener,OnLoadCompl
             this.setMinZoom(this.minScale);
             this.setMaxZoom(this.maxScale);
             this.setMidZoom((this.maxScale+this.minScale)/2);
+            // Push AndroidPdfViewer toward higher-quality tiles while zooming.
+            Constants.PART_SIZE = 768.0f;
+            Constants.THUMBNAIL_RATIO = 1.0f;
+            Constants.Cache.CACHE_SIZE = 180;
+            Constants.Cache.THUMBNAILS_CACHE_SIZE = 16;
+            this.useBestQuality(true);
+            this.enableRenderDuringScale(true);
             Constants.Pinch.MINIMUM_ZOOM = this.minScale;
             Constants.Pinch.MAXIMUM_ZOOM = this.maxScale;
 
