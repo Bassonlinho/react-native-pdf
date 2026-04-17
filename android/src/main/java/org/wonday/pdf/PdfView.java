@@ -174,14 +174,6 @@ public class PdfView extends PDFView implements OnPageChangeListener,OnLoadCompl
         if (dispatcher != null) {
             dispatcher.dispatchEvent(tce);
         }
-        //        ReactContext reactContext = (ReactContext)this.getContext();
-//        reactContext.getJSModule(RCTEventEmitter.class).receiveEvent(
-//            this.getId(),
-//            "topChange",
-//            event
-//         );
-
-        //Log.e("ReactNative", gson.toJson(this.getTableOfContents()));
 
     }
 
@@ -203,13 +195,6 @@ public class PdfView extends PDFView implements OnPageChangeListener,OnLoadCompl
         if (dispatcher != null) {
             dispatcher.dispatchEvent(tce);
         }
-
-//        ReactContext reactContext = (ReactContext)this.getContext();
-//        reactContext.getJSModule(RCTEventEmitter.class).receiveEvent(
-//            this.getId(),
-//            "topChange",
-//            event
-//         );
     }
 
     @Override
@@ -274,12 +259,6 @@ public class PdfView extends PDFView implements OnPageChangeListener,OnLoadCompl
             if (dispatcher != null) {
                 dispatcher.dispatchEvent(tce);
             }
-//            ReactContext reactContext = (ReactContext)this.getContext();
-//            reactContext.getJSModule(RCTEventEmitter.class).receiveEvent(
-//                this.getId(),
-//                "topChange",
-//                event
-//             );
         }
 
         if (originalWidth > 0 && this.isZooming()) {
@@ -340,7 +319,7 @@ public class PdfView extends PDFView implements OnPageChangeListener,OnLoadCompl
             this.setMaxZoom(this.maxScale);
             this.setMidZoom((this.maxScale+this.minScale)/2);
             // Push AndroidPdfViewer toward higher-quality tiles while zooming.
-            Constants.PART_SIZE = 768.0f;
+            Constants.PART_SIZE = 600.0f;
             Constants.THUMBNAIL_RATIO = 1.0f;
             Constants.Cache.CACHE_SIZE = 180;
             Constants.Cache.THUMBNAILS_CACHE_SIZE = 16;
