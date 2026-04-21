@@ -518,21 +518,10 @@ using namespace facebook::react;
         }
 
         if (_pdfDocument && ([changedProps containsObject:@"path"] || [changedProps containsObject:@"scrollEnabled"])) {
-            if (_scrollEnabled) {
-                for (UIView *subview in _pdfView.subviews) {
-                    if ([subview isKindOfClass:[UIScrollView class]]) {
-                        UIScrollView *scrollView = (UIScrollView *)subview;
-                        scrollView.scrollEnabled = YES;
-                    }
-                }
-            } else {
-                for (UIView *subview in _pdfView.subviews) {
-                    if ([subview isKindOfClass:[UIScrollView class]]) {
-                        UIScrollView *scrollView = (UIScrollView *)subview;
-                        scrollView.scrollEnabled = NO;
-                    }
-                }
-            }
+            // PDFKit paging uses nested scroll views. Recursively disable both
+            // scrolling and the pan recognizer so native paging can't keep
+            // owning horizontal swipes when JS expects to handle them.
+            [self setScrollEnabled:self->_pdfView enabled:_scrollEnabled depth:0];
         }
 
         if (_pdfDocument && ([changedProps containsObject:@"path"] || [changedProps containsObject:@"enablePaging"] || [changedProps containsObject:@"horizontal"] || [changedProps containsObject:@"page"])) {
@@ -947,6 +936,23 @@ using namespace facebook::react;
     
     for (UIView *subview in view.subviews) {
         [self setScrollIndicators:subview horizontal:horizontal vertical:vertical depth:depth + 1];
+    }
+}
+
+- (void)setScrollEnabled:(UIView *)view enabled:(BOOL)enabled depth:(int)depth {
+    // max depth, prevent infinite loop
+    if (depth > 10) {
+        return;
+    }
+
+    if ([view isKindOfClass:[UIScrollView class]]) {
+        UIScrollView *scrollView = (UIScrollView *)view;
+        scrollView.scrollEnabled = enabled;
+        scrollView.panGestureRecognizer.enabled = enabled;
+    }
+
+    for (UIView *subview in view.subviews) {
+        [self setScrollEnabled:subview enabled:enabled depth:depth + 1];
     }
 }
 
